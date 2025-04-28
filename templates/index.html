@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather & Events Explorer</title>
+    
+    <!-- Стили -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet (единственная версия) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+        crossorigin="anonymous">
+    
+    <!-- Скрипты -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+        crossorigin="anonymous"></script>
+        
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Все стили из оригинального index.html */
+    :root {
+        --primary-color: #3b82f6;
+        --secondary-color: #10b981;
+        --accent-color: #8b5cf6;
+        --text-color: #1f2937;
+        --background-color: #f3f4f6;
+        --card-bg: rgba(255, 255, 255, 0.8);
+        --info-bg: #eff6ff;
+        --info-text: #1e3a8a;
+    }
+    
+    .dark-mode {
+        --primary-color: #60a5fa;
+        --secondary-color: #34d399;
+        --accent-color: #a78bfa;
+        --text-color: #f3f4f6;
+        --background-color: #111827;
+        --card-bg: rgba(31, 41, 55, 0.8);
+        --info-bg: #1e3a5f;
+        --info-text: #e5e7eb;
+    }
+    
+    body {
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-color);
+        background-color: var(--background-color);
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    .bg-gradient {
+        background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+        transition: background-image 0.3s ease;
+    }
+    
+    .dark-mode .bg-gradient {
+        background-image: linear-gradient(120deg, #1a365d 0%, #0f172a 100%);
+    }
+    
+	.map-container {
+    height: 400px;
+    min-height: 300px; /* Добавить */
+	}
+
+	#map, #map-full {
+		height: 400px;
+		min-height: 300px;
+		background: #f0f0f0; /* Фон на случай если карта не загрузится */
+	}
+
+	#map-full {
+		height: 600px;
+	}
+	
+    .loading {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        border: 3px solid rgba(255,255,255,.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .card {
+        transition: all 0.3s ease;
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .aqi-indicator {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .weather-icon {
+        filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.07));
+        transform: scale(1.2);
+    }
+    
+    .event-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .event-card:hover {
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .search-container {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .map-container {
+        height: 400px;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+	.autocomplete-container {
+		position: relative;
+	}
+
+	#autocomplete-results {
+		max-height: 200px;
+		overflow-y: auto;
+		border: 1px solid #e5e7eb;
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	}
+
+	#autocomplete-results div:last-child {
+		border-bottom: none;
+	}
+
+	.autocomplete-item {
+		padding: 0.75rem 1rem;
+		transition: background-color 0.2s;
+	}
+
+	.autocomplete-item:hover {
+		background-color: #f3f4f6;
+	}
+    
+    .dark-mode .autocomplete-results {
+        background: #374151;
+    }
+    
+    .dark-mode .autocomplete-item:hover {
+        background-color: #4b5563;
+    }
+    
+    .tab-button {
+        position: relative;
+        transition: all 0.3s ease;
+    }
+    
+    .tab-button::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background-color: var(--primary-color);
+        transition: all 0.3s ease;
+        transform: translateX(-50%);
+    }
+    
+    .tab-button.active::after {
+        width: 80%;
+    }
+    
+    .tooltip {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .tooltip .tooltip-text {
+        visibility: hidden;
+        width: 120px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -60px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+    
+    .forecast-card {
+        transition: all 0.3s ease;
+    }
+    
+    .forecast-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pollutant-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: #e5e7eb;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .pollutant-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 1s ease-in-out;
+    }
+    
+    .favorite-btn {
+        transition: all 0.3s ease;
+    }
+    
+    .favorite-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    .favorite-btn.active {
+        color: #f59e0b;
+    }
+    
+    .share-btn {
+        transition: all 0.3s ease;
+    }
+    
+    .share-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    /* Стили для переключателя темы */
+    .theme-switch {
+        position: relative;
+        width: 60px;
+        height: 30px;
+    }
+    
+    .theme-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+        background-color: #3b82f6;
+    }
+    
+    input:checked + .slider:before {
+        transform: translateX(30px);
+    }
+    
+    /* Стили для анимации загрузки */
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+        }
+        
+        70% {
+            transform: scale(1);
+            box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+        }
+        
+        100% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+        }
+    }
+
+    /* Исправления для темного режима и контраста текста */
+    .dark-mode {
+        background-color: var(--background-color);
+    }
+
+    .dark-mode .card {
+        color: var(--text-color);
+    }
+
+    .dark-mode #autocomplete-results {
+        background-color: #374151;
+        border-color: #4b5563;
+    }
+
+    .dark-mode .autocomplete-item:hover {
+        background-color: #4b5563;
+    }
+
+    /* Исправления для информационных панелей */
+    .bg-blue-50 {
+        background-color: var(--info-bg) !important;
+        color: var(--info-text) !important;
+    }
+
+    /* Исправления для текста в светлом режиме */
+    .text-gray-500 {
+        color: #6b7280 !important;
+    }
+
+    .text-gray-600 {
+        color: #4b5563 !important;
+    }
+
+    .text-gray-400 {
+        color: #9ca3af !important;
+    }
+
+    .dark-mode .text-gray-500,
+    .dark-mode .text-gray-600,
+    .dark-mode .text-gray-400 {
+        color: #9ca3af !important;
+    }
+
+    /* Исправления для ссылок */
+    .text-blue-600 {
+        color: #2563eb !important;
+    }
+
+    .dark-mode .text-blue-600 {
+        color: #60a5fa !important;
+    }
+
+    .text-blue-800 {
+        color: #1e40af !important;
+    }
+
+    .dark-mode .text-blue-800 {
+        color: #60a5fa !important;
+    }
+
+    /* Исправления для кнопок фильтра событий */
+    .event-filter-btn {
+        background-color: #e0e7ff !important;
+        color: #4338ca !important;
+    }
+
+    .event-filter-btn:hover {
+        background-color: #c7d2fe !important;
+    }
+
+    .event-filter-btn.active {
+        background-color: #4f46e5 !important;
+        color: white !important;
+    }
+
+    .dark-mode .event-filter-btn {
+        background-color: #4b5563 !important;
+        color: #e5e7eb !important;
+    }
+
+    .dark-mode .event-filter-btn:hover {
+        background-color: #6b7280 !important;
+    }
+
+    .dark-mode .event-filter-btn.active {
+        background-color: #6366f1 !important;
+        color: white !important;
+    }
+
+    /* Исправления для модального окна */
+    #share-modal .bg-white {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
+    }
+
+    .dark-mode #share-modal .bg-white {
+        background-color: #1f2937 !important;
+        color: #f3f4f6 !important;
+    }
+
+    #share-modal input {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
+        border-color: #e5e7eb !important;
+    }
+
+    .dark-mode #share-modal input {
+        background-color: #374151 !important;
+        color: #f3f4f6 !important;
+        border-color: #4b5563 !important;
+    }
+
+    /* Исправления для карточек прогноза */
+    .forecast-card {
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        color: #1f2937 !important;
+    }
+
+    .dark-mode .forecast-card {
+        background-color: rgba(31, 41, 55, 0.8) !important;
+        color: #f3f4f6 !important;
+    }
+
+    /* Исправления для поля ввода */
+    input[type="text"] {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
+        border-color: #e5e7eb !important;
+    }
+
+    .dark-mode input[type="text"] {
+        background-color: #374151 !important;
+        color: #f3f4f6 !important;
+        border-color: #4b5563 !important;
+    }
+
+    #event-search::placeholder {
+        color: #6b7280 !important;
+    }
+
+    .dark-mode #event-search::placeholder {
+        color: #9ca3af !important;
+    }
+
+    /* Дополнительные исправления для блоков с качеством воздуха и прогнозом */
+    /* Исправления для информационных блоков в качестве воздуха */
+    .card p, .card li, .card h3, .card h4 {
+        color: var(--text-color) !important;
+    }
+
+    /* Исправления для списков в информационных блоках */
+    .list-disc li, .space-y-1 li {
+        color: var(--text-color) !important;
+    }
+
+    /* Исправления для заголовков в карточках */
+    .card .font-bold, .card .font-semibold, .card .font-medium {
+        color: var(--text-color) !important;
+    }
+
+    /* Исправления для информационных панелей в прогнозе и качестве воздуха */
+    .mt-8 .bg-blue-50, .mt-4 .bg-blue-50 {
+        background-color: var(--info-bg) !important;
+        color: var(--info-text) !important;
+    }
+
+    /* Исправления для текста в информационных панелях */
+    .bg-blue-50 p, .bg-blue-50 li, .bg-blue-50 h3, .bg-blue-50 h4, .bg-blue-50 span {
+        color: inherit !important;
+    }
+
+    /* Исправления для детальных прогнозов */
+    #forecast-detailed .space-y-6 > div {
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        color: #1f2937 !important;
+    }
+
+    .dark-mode #forecast-detailed .space-y-6 > div {
+        background-color: rgba(31, 41, 55, 0.8) !important;
+        color: #f3f4f6 !important;
+    }
+
+    /* Исправления для детальной информации о качестве воздуха */
+    #air-quality-detailed > div {
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        color: #1f2937 !important;
+    }
+
+    .dark-mode #air-quality-detailed > div {
+        background-color: rgba(31, 41, 55, 0.8) !important;
+        color: #f3f4f6 !important;
+    }
+
+    /* Исправления для графиков */
+    canvas {
+        background-color: rgba(255, 255, 255, 0.5) !important;
+    }
+
+    .dark-mode canvas {
+        background-color: rgba(31, 41, 55, 0.5) !important;
+    }
+
+    /* Исправления для темных квадратов в светлом режиме */
+    /* Общие исправления для всех информационных блоков */
+    .bg-blue-50, .bg-blue-900 {
+        background-color: var(--info-bg) !important;
+        color: var(--info-text) !important;
+    }
+
+    /* Исправления для превью качества воздуха */
+    #air-quality-content .bg-blue-900,
+    #air-quality-content .bg-blue-50,
+    #air-quality-content [class*="bg-blue-"] {
+        background-color: var(--info-bg) !important;
+        color: var(--info-text) !important;
+    }
+
+    /* Исправления для подробного прогноза */
+    #forecast-detailed .bg-blue-900,
+    #forecast-detailed .bg-blue-50,
+    #forecast-detailed [class*="bg-blue-"] {
+        background-color: var(--info-bg) !important;
+        color: var(--info-text) !important;
+    }
+
+    /* Исправления для подробного отображения качества воздуха */
+    #air-quality-tab .bg-blue-900,
+    #air-quality-tab .bg-blue-50,
+    #air-quality-tab [class*="bg-blue-"] {
+        background-color: var(--info-bg) !important;
+        color: var(--info-text) !important;
+    }
+
+    /* Исправления для всех карточек и контейнеров */
+    .card [class*="bg-blue-"],
+    .card [class*="bg-indigo-"],
+    .card [class*="bg-purple-"],
+    .card [class*="bg-gray-"] {
+        background-color: var(--info-bg) !important;
+        color: var(--info-text) !important;
+    }
+
+    /* Исправления для динамически добавляемых элементов */
+    [class*="aqi-level-"],
+    [class*="weather-condition-"],
+    [class*="forecast-detail-"] {
+        background-color: var(--info-bg) !important;
+        color: var(--info-text) !important;
+    }
+
+    /* Исключения для цветовых индикаторов */
+    .bg-green-500, .bg-yellow-500, .bg-orange-500, .bg-red-500, .bg-purple-500 {
+        color: white !important;
+    }
+
+    /* Исправления для иконок в информационных блоках */
+    .bg-blue-50 i, .bg-blue-900 i {
+        color: #3b82f6 !important;
+    }
+
+    .dark-mode .bg-blue-50 i, .dark-mode .bg-blue-900 i {
+        color: #60a5fa !important;
+    }
+
+    /* Исправления для всех возможных контейнеров с темным фоном */
+    .p-4.rounded-lg, .p-6.rounded-lg {
+        background-color: var(--info-bg) !important;
+        color: var(--info-text) !important;
+    }
+
+    /* Исправления для AQI индикаторов */
+    .aqi-indicator {
+        color: white !important;
+    }
+
+    /* Исправления для всех возможных темных контейнеров */
+    .card .p-4:not([class*="bg-gradient"]),
+    .card .p-6:not([class*="bg-gradient"]) {
+        background-color: transparent !important;
+    }
+
+    /* Исправления для всех возможных темных блоков внутри карточек */
+    .card > div > div > div {
+        background-color: transparent !important;
+    }
+</style>
+</head>
+<body class="min-h-screen">
+<div class="bg-gradient min-h-screen">
+<div class="container mx-auto px-4 py-8">
+    <header class="flex flex-col md:flex-row justify-between items-center mb-10">
+        <div class="text-center md:text-left mb-4 md:mb-0">
+            <h1 class="text-4xl md:text-5xl font-bold mb-2 text-white drop-shadow-lg">Weather & Events Explorer</h1>
+            <p class="text-white text-lg opacity-90">Узнайте погоду, качество воздуха и события в любом месте</p>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center">
+                <span class="mr-2 text-white"><i class="fas fa-sun"></i></span>
+                <label class="theme-switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider"></span>
+                </label>
+                <span class="ml-2 text-white"><i class="fas fa-moon"></i></span>
+            </div>
+            <div class="units-toggle">
+                <button id="metric-toggle" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-1 rounded-l-lg focus:outline-none transition-colors active">°C</button>
+                <button id="imperial-toggle" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-1 rounded-r-lg focus:outline-none transition-colors">°F</button>
+            </div>
+        </div>
+    </header>
+    
+	<div class="max-w-md mx-auto search-container rounded-xl overflow-hidden shadow-lg p-6 mb-10">
+		<div class="mb-4">
+			<label for="location" class="block text-sm font-bold mb-2">Где бы вы хотели узнать погоду?</label>
+			<div class="relative autocomplete-container">
+				<div class="flex">
+					<input 
+						type="text" 
+						id="location" 
+						class="shadow appearance-none border rounded-l-lg w-full py-3 px-4 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+						placeholder="Введите название города, например, Москва"
+						autocomplete="off"
+					>
+					<button 
+						id="searchBtn" 
+						class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+					>
+						<i class="fas fa-search mr-2"></i>Поиск
+					</button>
+				</div>
+				
+				<!-- Контейнер для результатов автозаполнения -->
+				<div 
+					id="autocomplete-results" 
+					class="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto hidden"
+				></div>
+			</div>
+		</div>
+
+		<!-- Остальные элементы остаются без изменений -->
+		<div class="flex justify-between items-center">
+			<button id="geolocate-btn" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+				<i class="fas fa-location-arrow mr-1"></i> Использовать моё местоположение
+			</button>
+			<div id="favorites-dropdown" class="relative">
+				<button id="favorites-btn" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+					<i class="fas fa-star mr-1"></i> Избранное
+				</button>
+				<div id="favorites-list" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-10 py-1"></div>
+			</div>
+		</div>
+		
+		<div id="loading" class="hidden text-center py-2">
+			<div class="loading mr-2"></div> Исследуем ваше направление...
+		</div>
+		<div id="error" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-4"></div>
+	</div>
+    
+    <div id="results" class="hidden max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="location-title" class="text-2xl font-bold text-white"></h2>
+            <div class="flex space-x-2">
+                <button id="favorite-location" class="favorite-btn bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full focus:outline-none">
+                    <i class="far fa-star"></i>
+                </button>
+                <button id="share-location" class="share-btn bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full focus:outline-none">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-white border-opacity-20 mb-6">
+            <button class="tab-button active py-2 px-4 text-white font-medium" data-tab="overview">Обзор</button>
+            <button class="tab-button py-2 px-4 text-white font-medium" data-tab="forecast">Прогноз</button>
+            <button class="tab-button py-2 px-4 text-white font-medium" data-tab="air-quality-tab">Качество воздуха</button>
+            <button class="tab-button py-2 px-4 text-white font-medium" data-tab="events-tab">События</button>
+            <button class="tab-button py-2 px-4 text-white font-medium" data-tab="map-tab">Карта</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Weather Card -->
+                <div id="weather" class="card rounded-xl overflow-hidden shadow-lg">
+                    <div class="bg-gradient-to-r from-blue-500 to-cyan-500 p-4 text-white flex justify-between items-center">
+                        <h2 class="text-xl font-bold"><i class="fas fa-cloud-sun mr-2"></i>Текущая погода</h2>
+                        <span id="weather-time" class="text-sm opacity-80"></span>
+                    </div>
+                    <div id="weather-content" class="p-6">
+                        <!-- Weather data will be injected here -->
+                        <!-- Заглушка для данных о погоде -->
+                        <div class="flex items-center justify-center h-32">
+                            <p class="text-gray-500 italic">Данные о погоде появятся здесь после поиска</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Air Quality Card -->
+                <div id="air-quality" class="card rounded-xl overflow-hidden shadow-lg">
+                    <div class="bg-gradient-to-r from-green-500 to-teal-500 p-4 text-white flex justify-between items-center">
+                        <h2 class="text-xl font-bold"><i class="fas fa-wind mr-2"></i>Качество воздуха</h2>
+                        <span id="aqi-time" class="text-sm opacity-80"></span>
+                    </div>
+                    <div id="air-quality-content" class="p-6">
+                        <!-- Air quality data will be injected here -->
+                        <!-- Заглушка для данных о качестве воздуха -->
+                        <div class="flex items-center justify-center h-32">
+                            <p class="text-gray-500 italic">Данные о качестве воздуха появятся здесь после поиска</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Forecast Preview -->
+            <div id="forecast-preview" class="card rounded-xl overflow-hidden shadow-lg mb-8">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white flex justify-between items-center">
+                    <h2 class="text-xl font-bold"><i class="fas fa-calendar-day mr-2"></i>Прогноз на 5 дней</h2>
+                    <button id="view-full-forecast" class="text-sm underline hover:no-underline">Подробный прогноз</button>
+                </div>
+                <div id="forecast-preview-content" class="p-6">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4" id="forecast-cards">
+                        <!-- Forecast cards will be injected here -->
+                        <!-- Заглушка для данных о прогнозе -->
+                        <div class="col-span-5 flex items-center justify-center h-32">
+                            <p class="text-gray-500 italic">Данные о прогнозе появятся здесь после поиска</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Map Preview -->
+            <div id="map-section" class="card rounded-xl overflow-hidden shadow-lg mb-8">
+                <div class="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 text-white flex justify-between items-center">
+                    <h2 class="text-xl font-bold"><i class="fas fa-map-marker-alt mr-2"></i>Карта местоположения</h2>
+                    <button id="view-full-map" class="text-sm underline hover:no-underline">Полная карта</button>
+                </div>
+                <div class="p-6">
+                    <div id="map" class="map-container"></div>
+                    <div class="mt-4 bg-blue-50 p-4 rounded-lg">
+                        <h3 class="font-semibold mb-2">Информация о местоположении</h3>
+                        <div id="location-info" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p><i class="fas fa-map-pin text-blue-500 mr-2"></i> <span id="coordinates">Координаты: --</span></p>
+                                <p><i class="fas fa-globe-americas text-blue-500 mr-2"></i> <span id="country-info">Страна: --</span></p>
+                            </div>
+                            <div>
+                                <p><i class="fas fa-city text-blue-500 mr-2"></i> <span id="city-info">Город: --</span></p>
+                                <p><i class="fas fa-search-location text-blue-500 mr-2"></i> <a id="open-maps-link" href="#" target="_blank" class="text-blue-600 hover:underline">Открыть в Google Maps</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Events Preview -->
+            <div id="events-preview" class="card rounded-xl overflow-hidden shadow-lg mb-8">
+                <div class="bg-gradient-to-r from-purple-500 to-indigo-500 p-4 text-white flex justify-between items-center">
+                    <h2 class="text-xl font-bold"><i class="fas fa-calendar-alt mr-2"></i>Предстоящие события</h2>
+                    <button id="view-all-events" class="text-sm underline hover:no-underline">Все события</button>
+                </div>
+                <div class="p-6">
+                    <div id="events-preview-content">
+                        <!-- Events preview will be injected here -->
+                    </div>
+                    <div id="no-events-preview" class="hidden text-center text-gray-600 py-8">
+                        <i class="far fa-calendar-times text-4xl mb-3 text-gray-400"></i>
+                        <p>Для этого местоположения не найдено событий.</p>
+                        <p class="text-sm text-gray-500 mt-2">Попробуйте поискать в более крупном городе или проверьте позже.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Forecast Tab -->
+        <div id="forecast" class="tab-content hidden">
+            <div class="card rounded-xl overflow-hidden shadow-lg mb-8">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white">
+                    <h2 class="text-xl font-bold"><i class="fas fa-calendar-day mr-2"></i>Прогноз погоды на 5 дней</h2>
+                </div>
+                <div class="p-6">
+                    <div id="forecast-detailed" class="space-y-6">
+                        <!-- Detailed forecast will be injected here -->
+                    </div>
+                    <div class="mt-8">
+                        <h3 class="font-bold text-lg mb-4">Тренд температуры</h3>
+                        <canvas id="temperature-chart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Air Quality Tab -->
+        <div id="air-quality-tab" class="tab-content hidden">
+            <div class="card rounded-xl overflow-hidden shadow-lg mb-8">
+                <div class="bg-gradient-to-r from-green-500 to-teal-500 p-4 text-white">
+                    <h2 class="text-xl font-bold"><i class="fas fa-wind mr-2"></i>Подробная информация о качестве воздуха</h2>
+                </div>
+                <div class="p-6">
+                    <div id="air-quality-detailed">
+                        <!-- Detailed air quality will be injected here -->
+                    </div>
+                    <div class="mt-8">
+                        <h3 class="font-bold text-lg mb-4">Концентрация загрязняющих веществ</h3>
+                        <div id="pollutants-chart-container">
+                            <canvas id="pollutants-chart" height="250"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-8 bg-blue-50 p-4 rounded-lg">
+                        <h3 class="font-bold text-lg mb-2">Что означают эти значения?</h3>
+                        <p class="mb-4">Индекс качества воздуха (AQI) - это показатель того, как загрязнение воздуха влияет на здоровье. Более низкие значения лучше.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-semibold">Основные загрязнители:</h4>
+                                <ul class="list-disc list-inside space-y-1 mt-2">
+                                    <li><span class="font-medium">PM2.5 и PM10:</span> Твердые частицы (пыль, дым)</li>
+                                    <li><span class="font-medium">O3:</span> Озон - может вызывать проблемы с дыханием</li>
+                                    <li><span class="font-medium">NO2:</span> Диоксид азота - от выбросов транспорта</li>
+                                    <li><span class="font-medium">SO2:</span> Диоксид серы - от промышленных процессов</li>
+                                    <li><span class="font-medium">CO:</span> Угарный газ - от сгорания</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold">Категории AQI:</h4>
+                                <ul class="space-y-1 mt-2">
+                                    <li><span class="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span> Хороший (1): Минимальный риск</li>
+                                    <li><span class="inline-block w-3 h-3 bg-yellow-500 rounded-full mr-2"></span> Удовлетворительный (2): Приемлемое качество</li>
+                                    <li><span class="inline-block w-3 h-3 bg-orange-500 rounded-full mr-2"></span> Умеренный (3): Может влиять на чувствительные группы</li>
+                                    <li><span class="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span> Плохой (4): Влияние на здоровье некоторых людей</li>
+                                    <li><span class="inline-block w-3 h-3 bg-purple-500 rounded-full mr-2"></span> Очень плохой (5): Предупреждение о здоровье</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Events Tab -->
+        <div id="events-tab" class="tab-content hidden">
+            <div class="card rounded-xl overflow-hidden shadow-lg mb-8">
+                <div class="bg-gradient-to-r from-purple-500 to-indigo-500 p-4 text-white">
+                    <h2 class="text-xl font-bold"><i class="fas fa-calendar-alt mr-2"></i>Все события</h2>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button class="event-filter-btn px-3 py-1 rounded-full text-sm font-medium hover:bg-indigo-200 active" data-filter="all">Все события</button>
+                            <button class="event-filter-btn px-3 py-1 rounded-full text-sm font-medium hover:bg-indigo-200" data-filter="free">Только бесплатные</button>
+                            <button class="event-filter-btn px-3 py-1 rounded-full text-sm font-medium hover:bg-indigo-200" data-filter="paid">Только платные</button>
+                        </div>
+                        <input type="text" id="event-search" class="w-full p-2 border rounded-lg" placeholder="Поиск событий...">
+                    </div>
+                    <div id="events-content">
+                        <!-- Events data will be injected here -->
+                    </div>
+                    <div id="no-events" class="hidden text-center text-gray-600 py-8">
+                        <i class="far fa-calendar-times text-4xl mb-3 text-gray-400"></i>
+                        <p>Для этого местоположения не найдено событий.</p>
+                        <p class="text-sm text-gray-500 mt-2">Попробуйте поискать в более крупном городе или проверьте позже.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Map Tab -->
+        <div id="map-tab" class="tab-content hidden">
+            <div class="card rounded-xl overflow-hidden shadow-lg mb-8">
+                <div class="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 text-white">
+                    <h2 class="text-xl font-bold"><i class="fas fa-map-marker-alt mr-2"></i>Интерактивная карта</h2>
+                </div>
+                <div class="p-6">
+                    <div id="map-full" class="map-container h-[600px]"></div>
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h3 class="font-semibold mb-2">Детали местоположения</h3>
+                            <div id="location-details">
+                                <p><i class="fas fa-map-pin text-blue-500 mr-2"></i> <span id="coordinates-full">Координаты: --</span></p>
+                                <p><i class="fas fa-globe-americas text-blue-500 mr-2"></i> <span id="country-info-full">Страна: --</span></p>
+                                <p><i class="fas fa-city text-blue-500 mr-2"></i> <span id="city-info-full">Город: --</span></p>
+                                <p class="mt-2">
+                                    <a id="open-maps-link-full" href="#" target="_blank" class="text-blue-600 hover:underline flex items-center">
+                                        <i class="fas fa-external-link-alt mr-2"></i> Открыть в Google Maps
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h3 class="font-semibold mb-2">Управление картой</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Стиль карты</label>
+                                    <div class="flex space-x-2">
+                                        <button id="map-style-street" class="bg-blue-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-blue-600 active">Улицы</button>
+                                        <button id="map-style-satellite" class="bg-gray-200 text-gray-800 px-3 py-1 rounded text-sm font-medium hover:bg-gray-300">Спутник</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Показать достопримечательности</label>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" id="show-poi" class="rounded text-blue-600">
+                                        <span class="ml-2">Отображать ближайшие достопримечательности</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<footer class="bg-gray-800 text-white py-6 mt-10">
+    <div class="container mx-auto px-4 text-center">
+        <p>© 2025 Weather & Events Explorer | Работает на OpenWeatherMap и Eventbrite</p>
+        <div class="flex justify-center space-x-4 mt-4">
+            <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-github"></i></a>
+            <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-linkedin"></i></a>
+        </div>
+        <p class="text-sm text-gray-400 mt-4">Создано с ❤️ для любителей погоды</p>
+    </div>
+</footer>
+
+<!-- Share Modal -->
+<div id="share-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Поделиться этим местоположением</h3>
+            <button id="close-share-modal" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="mb-4">
+            <p class="mb-2">Поделитесь этим местоположением с друзьями:</p>
+            <input id="share-url" type="text" class="w-full p-2 border rounded" readonly>
+        </div>
+        <div class="flex space-x-2">
+            <button id="copy-url" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                <i class="far fa-copy mr-2"></i> Копировать ссылку
+            </button>
+            <div class="flex space-x-2">
+                <a href="#" id="share-twitter" class="bg-blue-400 hover:bg-blue-500 text-white p-2 rounded">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" id="share-facebook" class="bg-blue-800 hover:bg-blue-900 text-white p-2 rounded">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" id="share-whatsapp" class="bg-green-500 hover:bg-green-600 text-white p-2 rounded">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
