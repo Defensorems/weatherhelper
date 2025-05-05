@@ -230,23 +230,3 @@ weather-events-explorer/
 
 - **Defensorems**
 
-## 🙏 Благодарности
-
-- [OpenWeatherMap](https://openweathermap.org/) за предоставление API погоды
-- [IQAir](https://www.iqair.com/) за данные о качестве воздуха
-- [Ticketmaster](https://developer.ticketmaster.com/) за API событий
-- [Tailwind CSS](https://tailwindcss.com/) за фреймворк CSS
-- [Font Awesome](https://fontawesome.com/) за иконки
-- [Leaflet](https://leafletjs.com/) за интерактивные карты
-- [Chart.js](https://www.chartjs.org/) за визуализацию данных
-
----
-
-<div align="center">
-  <p>Сделано с ❤️ для любителей погоды и путешественников</p>
-  <p>
-    <a href="https://github.com/yourusername">GitHub</a> •
-    <a href="https://twitter.com/yourusername">Twitter</a> •
-    <a href="https://linkedin.com/in/yourusername">LinkedIn</a>
-  </p>
-</div>
