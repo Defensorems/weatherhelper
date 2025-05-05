@@ -50,38 +50,29 @@ Weather & Events Explorer is a comprehensive web application that provides real-
    cd weather-events-explorer
    ```
 
-```plaintext
 
 2. Create and activate a virtual environment:
-```
-
+```plaintext
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-```plaintext
+```
 
 3. Install dependencies:
-```
-
-pip install -r requirements.txt
-
 ```plaintext
+pip install -r requirements.txt
+```
 
 4. Create a `.env` file in the project root and add your API keys:
-```
-
+```plaintext
 WEATHER_API_KEY=your_openweathermap_api_key
 AIR_QUALITY_API_KEY=your_iqair_api_key
 EVENTS_API_KEY=your_ticketmaster_api_key
-
-```plaintext
-
-5. Run the application:
 ```
 
-python app.py
-
+5. Run the application:
 ```plaintext
+python app.py
+```
 
 6. Open your browser and navigate to `http://localhost:5000`
 
