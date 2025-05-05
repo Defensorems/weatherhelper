@@ -10,11 +10,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # API Keys (replace with your actual keys or environment variables)
-WEATHER_API_KEY = '6c9f3821ef0b33dd01dedbd5cd162454'
-EVENTS_API_KEY = 'GP2BW3D7YRTLCPXVONQM'
-AIR_QUALITY_API_KEY = 'e864be35-99e4-4415-b6f0-a6ca9241d436'
-IQAIR_API_KEY = 'e864be35-99e4-4415-b6f0-a6ca9241d436'
-IQAIR_BASE_URL = "http://api.airvisual.com/v2/nearest_city"
 
 @app.route('/', methods=['GET'])
 def home():
