@@ -46,33 +46,33 @@ Weather & Events Explorer is a comprehensive web application that provides real-
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/weather-events-explorer.git
+   git clone https://github.com/Defensorems/weather-events-explorer.git
    cd weather-events-explorer
    ```
 
 
 2. Create and activate a virtual environment:
-```plaintext
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+  ```bash
+  python -m venv venv
+  source venv/bin/activate  # On Windows: venv\Scripts\activate
+  ```
 
 3. Install dependencies:
-```plaintext
-pip install -r requirements.txt
-```
+  ```bash
+  pip install -r requirements.txt
+  ```
 
 4. Create a `.env` file in the project root and add your API keys:
-```plaintext
-WEATHER_API_KEY=your_openweathermap_api_key
-AIR_QUALITY_API_KEY=your_iqair_api_key
-EVENTS_API_KEY=your_ticketmaster_api_key
-```
+  ```bash
+  WEATHER_API_KEY=your_openweathermap_api_key
+  AIR_QUALITY_API_KEY=your_iqair_api_key
+  EVENTS_API_KEY=your_ticketmaster_api_key
+  ```
 
 5. Run the application:
-```plaintext
-python app.py
-```
+  ```bash
+  python app.py
+  ```
 
 6. Open your browser and navigate to `http://localhost:5000`
 
@@ -105,4 +105,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 5. Open a Pull Request
 
 ## 📄 License
+```plaintext
+This project is licensed under the MIT License - see the LICENSE file for details.
 ```
