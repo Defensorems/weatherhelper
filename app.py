@@ -10,7 +10,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # API Keys (replace with your actual keys or environment variables)
-
+WEATHER_API_KEY = ''
+EVENTS_API_KEY = ''
+AIR_QUALITY_API_KEY = ''
+IQAIR_API_KEY = ''
+IQAIR_BASE_URL = "http://api.airvisual.com/v2/nearest_city"
 @app.route('/', methods=['GET'])
 def home():
     """Отдаёт главную HTML-страницу."""
