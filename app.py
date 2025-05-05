@@ -2,6 +2,10 @@ from flask import Flask, request, jsonify, render_template
 import logging
 import os
 import requests
+from dotenv import load_dotenv
+
+# Загрузка переменных окружения из файла .env
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -9,12 +13,13 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# API Keys (replace with your actual keys or environment variables)
-WEATHER_API_KEY = ''
-EVENTS_API_KEY = ''
-AIR_QUALITY_API_KEY = ''
-IQAIR_API_KEY = ''
-IQAIR_BASE_URL = "http://api.airvisual.com/v2/nearest_city"
+# API Keys from environment variables
+WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
+EVENTS_API_KEY = os.getenv('EVENTS_API_KEY')
+AIR_QUALITY_API_KEY = os.getenv('AIR_QUALITY_API_KEY')
+IQAIR_API_KEY = os.getenv('IQAIR_API_KEY')
+IQAIR_BASE_URL = os.getenv('IQAIR_BASE_URL')
+
 @app.route('/', methods=['GET'])
 def home():
     """Отдаёт главную HTML-страницу."""
